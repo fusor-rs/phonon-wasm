@@ -2,7 +2,7 @@
 //
 // 1. Open the page and press Speak while the model is still loading: the request is queued and
 //    runs the moment the model is ready (measures page open → first audio).
-// 2. Pick another voice: picking it plays a preview.
+// 2. Pick another voice: picking it only selects it, nothing plays.
 // 3. Speak in that voice with the model warm (measures click → first audio, the real-time factor
 //    and the time per frame), and check that audio came out, that nothing was requested after the
 //    model was ready, that playback had no gaps, and that the WAV the page offers is intelligible
@@ -83,7 +83,7 @@ async function metrics(page) {
   return { ...Object.fromEntries(tiles.map((id, i) => [id, texts[i]])), notes };
 }
 
-/** Clicks `selector` (Speak, a voice) and waits for its synthesis to finish; returns the page's numbers. */
+/** Clicks `selector` (Speak) and waits for its synthesis to finish; returns the page's numbers. */
 async function speak(page, requests, selector) {
   const requestsBefore = requests.length;
   await page.click(selector);
@@ -105,6 +105,7 @@ try {
 
   const t0 = Date.now();
   await page.goto(`${BASE}/${query}`);
+  await page.waitForSelector('main[data-phase]');
   await page.fill('#text', values.text);
   results.queuedAt = await page.getAttribute('main', 'data-phase');
   await page.click('#generate');
@@ -117,10 +118,10 @@ try {
 
   const playedOut = () => document.querySelector('.live')?.dataset.playing === 'false';
   await page.waitForFunction(playedOut, null, { timeout: DEADLINE_MS });
-  const preview = await speak(page, requests, `label.voice:has(input[value="${values.voice}"])`);
-  results.preview = preview;
-  check(preview.status === 'done' && preview['audio-seconds'] !== '0.00 s', `${values.voice} preview: ${preview['audio-seconds']}, first audio ${preview.heard} (${preview.notes[0]})`);
-  await page.waitForFunction(playedOut, null, { timeout: DEADLINE_MS });
+  await page.click(`label.voice:has(input[value="${values.voice}"])`);
+  const picked = await page.isChecked(`input[value="${values.voice}"]`);
+  const phaseAfterPick = await page.getAttribute('main', 'data-phase');
+  check(picked && phaseAfterPick === 'ready', `${values.voice} picked: selected, nothing plays (phase ${phaseAfterPick})`);
   const warm = await speak(page, requests, '#generate');
   results.warm = warm;
   check(warm.status === 'done', `warm run: first audio ${warm.heard} (${warm.notes[0]}), RTF ${warm.rtf}, ${warm['per-frame']} per frame, ${warm['audio-seconds']} (${warm.notes[3]})`);

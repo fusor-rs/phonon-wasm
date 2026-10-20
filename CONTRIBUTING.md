@@ -47,9 +47,20 @@ static site that must be served cross-origin isolated to get the threaded runtim
 tensor parts are named by their BLAKE3 there, so caching `/model/parts/` as immutable stays
 correct across recompiles, and the page deletes the parts of earlier bundles from its OPFS cache
 after loading a new one.
-[vercel.json](vercel.json) does that for Vercel (`just deploy`, prebuilt files, after
-`vercel link`), and [space/README.md](space/README.md) for a static Hugging Face Space
-(`just deploy-space`, with [uv](https://docs.astral.sh/uv/) after `hf auth login`).
+
+[phonon-wasm.fusor.build](https://phonon-wasm.fusor.build) is the Vercel project `phonon-wasm`
+in the `pirela` team, deployed as prebuilt files: Vercel has no Rust toolchain. Run
+`just deploy` after `vercel link --scope pirela --project phonon-wasm`;
+[vercel.json](vercel.json) makes the page cross-origin isolated, so it gets the threaded
+runtimes.
+
+The same site is the static Hugging Face Space
+[fusorlabs/phonon-wasm](https://huggingface.co/spaces/fusorlabs/phonon-wasm). Run
+`just deploy-space` with [uv](https://docs.astral.sh/uv/) after `hf auth login`; it uploads the
+site with [space/README.md](space/README.md), whose `custom_headers` make the Space
+cross-origin isolated.
+
+`node e2e/run.mjs --url <site>` runs the end-to-end check against a deployment.
 
 ## Using AI tools
 

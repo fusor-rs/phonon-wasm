@@ -46,10 +46,10 @@
         <textarea id="text" class="field" rows="4" maxlength="2000" bind="state.text"></textarea>
 
         <fieldset hidden="{{ state.voices.get().is_empty() }}">
-          <legend>Voice <span class="muted">· pick one to hear it</span></legend>
+          <legend>Voice</legend>
           <div class="voices">
             <ForEach items="{{ state.voices.get() }}" key="{{ |voice| voice.id.clone() }}">
-              <label class="voice"><input type="radio" name="voice" value="{{ item.get().id }}" bind="state.voice.clone()" on:change="state.preview(item.get())"><span><strong>{{ item.get().name() }}</strong><small>{{ item.get().description() }}</small></span></label>
+              <label class="voice"><input type="radio" name="voice" value="{{ item.get().id }}" bind="state.voice.clone()"><span><strong>{{ item.get().name() }}</strong><small>{{ item.get().description() }}</small></span></label>
             </ForEach>
           </div>
         </fieldset>

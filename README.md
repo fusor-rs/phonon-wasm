@@ -13,7 +13,7 @@ phonon-wasm is the app around the model: a [fusor](https://github.com/fusor-rs/f
 
 **In development · v0.1**: this is experimental software. See [status and known limitations](#status-and-known-limitations).
 
-[Run it](#run-it-locally) · [How it works](#how-it-works) · [How fast is it](#how-fast-is-it) · [Benchmarks](benchmarks.md) · [Status](#status-and-known-limitations) · [Contributing](CONTRIBUTING.md)
+[Run it](#run-it-locally) · [Try it online](#try-it-online) · [How it works](#how-it-works) · [How fast is it](#how-fast-is-it) · [Benchmarks](benchmarks.md) · [Status](#status-and-known-limitations) · [Contributing](CONTRIBUTING.md)
 
 ## Run it locally
 
@@ -26,7 +26,11 @@ just ui
 
 and open the address it prints. That's all: `just ui` installs the pinned tools (the threads toolchain with rustup; wasm-bindgen, binaryen and the fusor CLI into `.tools/`), downloads the checkpoint and six catalog voices at pinned revisions (100 MB, each file sha256-checked), compiles them into a 46.1 MB bundle, builds the four browser runtimes (a few minutes the first time, seconds after) and the page, and serves it on `http://localhost:8787` with the bundle beside it.
 
-Press **Speak**, even while the model is still loading: the request waits and runs the moment the model is ready. Pick one of seven voices, the checkpoint's default and six from the [phonon-voices](https://huggingface.co/gradium/phonon-voices) catalog (US and British English); picking one plays a short preview. Audio plays from the first 80 ms frame, and **Download WAV** saves it. Every run is measured live: time to first audio, RTF, time per frame, audio length and playback gaps, and network requests since the model loaded, which stay at zero.
+Press **Speak**, even while the model is still loading: the request waits and runs the moment the model is ready. Pick one of seven voices, the checkpoint's default and six from the [phonon-voices](https://huggingface.co/gradium/phonon-voices) catalog (US and British English). Audio plays from the first 80 ms frame, and **Download WAV** saves it. Every run is measured live: time to first audio, RTF, time per frame, audio length and playback gaps, and network requests since the model loaded, which stay at zero.
+
+## Try it online
+
+Open [phonon-wasm.fusor.build](https://phonon-wasm.fusor.build) in Chrome or Edge. The page downloads the 46 MB model once and keeps it in the browser's storage, so the next visit loads in under a second. The same page runs as a Hugging Face Space, [fusorlabs/phonon-wasm](https://huggingface.co/spaces/fusorlabs/phonon-wasm).
 
 ## More ways to run it
 
@@ -90,7 +94,7 @@ phonon-wasm is v0.1 and experimental.
 
 | Platform or capability | Status |
 | --- | --- |
-| Chrome and Edge, threads and relaxed SIMD | Headless Chrome end-to-end check (`just e2e`): queued load, voice preview, speak, transcribe, revisit |
+| Chrome and Edge, threads and relaxed SIMD | Headless Chrome end-to-end check (`just e2e`): queued load, voice pick, speak, transcribe, revisit |
 | Browsers without relaxed SIMD (Safari, older Firefox) | SIMD128 builds, checked in Node (`just smoke`); not tested in those browsers |
 | Pages without cross-origin isolation | Single-threaded builds, about 10× faster than real time on an Apple M4 Pro |
 | Native CLI (macOS on Apple silicon) | Built and measured; no release archives yet |

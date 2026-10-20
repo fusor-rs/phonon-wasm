@@ -4,8 +4,6 @@ use serde::{Deserialize, Serialize};
 const SAMPLE_TEXT: &str = "The evening wind drifted down from the mountain pass, and the distant clouds slowly turned gold.";
 const DEFAULT_TEMPERATURE: f64 = 0.3;
 const DEFAULT_SEED: &str = "4242424242424242";
-// What a voice says when it is picked.
-const PREVIEW_TEXT: &str = "Hello! This is how I sound.";
 
 #[derive(Clone, PartialEq, Deserialize)]
 struct Voice {
@@ -210,7 +208,7 @@ struct App {
     voice: Signal<String>,
     temperature: Signal<f64>,
     seed: Signal<String>,
-    // `web/app.js` acts on every new count: `clicks` (Speak, a voice preview) resumes the audio
+    // `web/app.js` acts on every new count: `clicks` (Speak) resumes the audio
     // output inside the user's gesture, `starts` runs `request`, `stops` stops the synthesis and
     // the playback.
     #[js]
@@ -270,18 +268,7 @@ impl App {
             self.status
                 .set("Queued: it speaks the moment the model is ready.".into());
         } else {
-            self.begin(request, "Preparing…".into());
-        }
-    }
-
-    fn preview(&self, voice: Voice) {
-        if self.phase.get() != Phase::Ready {
-            return;
-        }
-        self.clicks.update(|count| *count += 1);
-        let status = format!("previewing {}…", voice.name());
-        if let Some(request) = self.request(PREVIEW_TEXT, voice.id) {
-            self.begin(request, status);
+            self.begin(request);
         }
     }
 
@@ -307,13 +294,13 @@ impl App {
         Some(serde_json::to_string(&request).expect("plain data serializes"))
     }
 
-    fn begin(&self, request: String, status: String) {
+    fn begin(&self, request: String) {
         self.request.set(request);
         self.phase.set(Phase::Generating);
         self.playing.set(true);
         self.measured.set(true);
         self.metrics.set(Metrics::default());
-        self.status.set(status);
+        self.status.set("Preparing…".into());
         self.starts.update(|count| *count += 1);
     }
 
@@ -373,7 +360,7 @@ impl App {
         let queued = self.queued.get();
         self.queued.set(false);
         if queued && let Some(request) = self.request(&self.text.get(), self.voice.get()) {
-            self.begin(request, "Preparing…".into());
+            self.begin(request);
         }
     }
 
