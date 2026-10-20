@@ -53,7 +53,7 @@ build: tools native model runtimes page
 
 # The threads toolchain, and the pinned wasm-bindgen, binaryen and fusor CLI (into .tools/).
 tools:
-    test -f {{fusor_ai}}/Cargo.toml || { echo "vendor/fusor-ai: check out fusor-ai next to this repository (AGENTS.md)" >&2; exit 1; }
+    test -f {{fusor_ai}}/Cargo.toml || git submodule update --init
     rustup target list --installed | grep -q wasm32-unknown-unknown || rustup target add wasm32-unknown-unknown
     rustup run {{threads_toolchain}} rustc --version >/dev/null 2>&1 || rustup toolchain install {{threads_toolchain}} --profile minimal --component rust-src --target wasm32-unknown-unknown --no-self-update
     {{fusor_ai}}/scripts/install-tools.sh {{wasm_bindgen_version}} > /dev/null

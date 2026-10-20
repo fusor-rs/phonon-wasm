@@ -26,14 +26,10 @@ don't invent scope, features or options beyond the task.
   `e2e/run.mjs`: the headless Chrome run; `benchmarks/head-to-head.mjs`: the
   same-browser comparison with Gradium's `phonon-tts`.
 - [fusor-ai](https://github.com/fusor-rs/fusor-ai): the model (`phonon`), its
-  compiler (`phonon-compile`), the kernels, blocks and bundle format.
-  `fusor-ai-phonon` is not on crates.io yet, so this repository builds against a
-  local checkout: `vendor/fusor-ai` is a symlink to `../../fusor-ai` (check
-  fusor-ai out next to this repository), the `fusor-ai-*` crates are path
-  dependencies into it, and it also supplies the browser loader and compute
-  pool, the runtime build, the import check and the dev server. Once fusor-ai
-  publishes the Phonon crates, the dependencies move to exact crates.io pins and
-  `vendor/fusor-ai` to a submodule at the same release, as in ming-wasm.
+  compiler (`phonon-compile`), the kernels, blocks and bundle format come from
+  crates.io as `fusor-ai-*` crates; `vendor/fusor-ai`, a git submodule at the
+  same release, supplies what crates.io does not carry: the browser loader and
+  compute pool, the runtime build, the import check and the dev server.
 
 What belongs where: model code (dimensions, tensor names, wiring, sampling,
 prompts, the text frontend) and anything another model could reuse go to
@@ -57,10 +53,12 @@ Constraints that hold everywhere:
   entropy. fusor-ai's `scripts/check-wasm-imports.mjs` is the check (`just
   runtimes` runs it on every build); never widen its allowlists to make a build
   pass.
-- The `fusor-ai-*` crates are path dependencies into `vendor/fusor-ai` and
-  nothing else: no `[patch]` tables, no copies of fusor-ai code here. Say which
-  fusor-ai commit a change was checked against, with the parity numbers and the
-  e2e result it gave.
+- The `fusor-ai-*` versions in `[workspace.dependencies]` and `vendor/fusor-ai`
+  name the same fusor-ai release (the submodule at its `v<version>` tag), and
+  move together in a change of their own, with the parity numbers and the e2e
+  result it gave. `[patch.crates-io]` entries pointing into `vendor/fusor-ai`
+  are for trying an unreleased change locally and never land. No copies of
+  fusor-ai code here.
 - The page may cache the bundle (OPFS) and measure itself; the runtime may not
   do I/O. Audio leaves the engine worker for the audio worklet directly, so the
   page's main thread only draws.

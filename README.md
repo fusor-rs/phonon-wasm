@@ -17,11 +17,10 @@ phonon-wasm is the app around the model: a [fusor](https://github.com/fusor-rs/f
 
 ## Run it locally
 
-You need Rust 1.99 or newer, installed with [rustup](https://rustup.rs), Node.js 22 or newer and [`just`](https://github.com/casey/just). fusor-ai's Phonon crates are not on crates.io yet, so check fusor-ai out next to this repository (`vendor/fusor-ai` links to it):
+You need Rust 1.99 or newer, installed with [rustup](https://rustup.rs), Node.js 22 or newer and [`just`](https://github.com/casey/just). Then:
 
 ```sh
-git clone https://github.com/fusor-rs/fusor-ai
-git clone https://github.com/fusor-rs/phonon-wasm && cd phonon-wasm
+git clone --recurse-submodules https://github.com/fusor-rs/phonon-wasm && cd phonon-wasm
 just ui
 ```
 
@@ -80,7 +79,7 @@ In the browser on the CPU, phonon-wasm is faster at every thread count, with a s
 | Guide | Covers |
 | --- | --- |
 | [Benchmarks](benchmarks.md) | Speed, latency, memory and intelligibility against Gradium's runtimes and other models, and how to reproduce them |
-| [Contributing](CONTRIBUTING.md) | Setup, checks, the fusor-ai checkout, deploying |
+| [Contributing](CONTRIBUTING.md) | Setup, checks, moving fusor-ai, deploying |
 | [AGENTS.md](AGENTS.md) | The code standard every change follows |
 
 ## Status and known limitations
@@ -116,7 +115,7 @@ A cloud API sends your text to a server and bills per character. phonon-wasm run
 
 ## Contributing
 
-phonon-wasm is an open source project in early development. The [contributing guide](CONTRIBUTING.md) covers the setup, checks and workflow. The runtime and the CLI live in `crates/` and the page in `app/`; the model and its toolkit come from fusor-ai, through the `vendor/fusor-ai` checkout.
+phonon-wasm is an open source project in early development. The [contributing guide](CONTRIBUTING.md) covers the setup, checks and workflow. The runtime and the CLI live in `crates/` and the page in `app/`; the model and its toolkit come from fusor-ai, its crates from crates.io and its browser scripts from `vendor/fusor-ai`.
 
 phonon-wasm is built with the help of AI tools, mainly Claude Code, under the same rules the project asks of contributors: see [Using AI tools](CONTRIBUTING.md#using-ai-tools).
 

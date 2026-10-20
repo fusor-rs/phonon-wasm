@@ -380,7 +380,9 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fusor-ai-blocks"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94d56bd36a8c484709fa3b2de97a14e41308fcad983855759e56265fdf743553"
 dependencies = [
  "fusor-ai-bundle",
  "fusor-ai-kernels",
@@ -390,7 +392,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-bundle"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4db11a9f2ca7c415b5fc8e495b8f2bfbc4736a5ed6bd99619ca110d0b3c6b43"
 dependencies = [
  "blake3",
  "fusor-ai-kernels",
@@ -401,7 +405,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-compile"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e367c5b8563578966b5c11395329869f3b9271aa29ac111e54ea935c8c11b58"
 dependencies = [
  "blake3",
  "fusor-ai-bundle",
@@ -413,7 +419,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-kernels"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "696949a20dc0e8852ae7bed3fc9a317976af0718662de0cc0e1a69ab636771e4"
 dependencies = [
  "fusor-ai-team",
  "serde",
@@ -422,7 +430,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-phonon"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc6f2285e4809aadcdd1cf6f04d8fcdbaa13a886418abd04c8658208fe9eb6b8"
 dependencies = [
  "fusor-ai-blocks",
  "fusor-ai-bundle",
@@ -435,7 +445,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-phonon-compile"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58c2ab1bd42d2dc443c3b609257b5e8f0ea7492b5267f644bec2d8d3af0df0be"
 dependencies = [
  "fusor-ai-bundle",
  "fusor-ai-compile",
@@ -445,7 +457,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-team"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e2d5ac39899d9094b1b75838fb7d36ab79b750f69e0feee647a0b55ee5f5f51"
 dependencies = [
  "rayon",
 ]
