@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phonon · text to speech in your browser</title>
+  <meta name="description" content="Phonon 31M running on this device's CPU, compiled to WebAssembly with fusor-ai. Your text never leaves the page.">
+  <link rel="icon" href="/brand/phonon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <App state="{{ App::new() }}">
+    <script type="module" src="./app.js"></script>
+    <main on:engine="state.receive(event)" data-phase="{{ state.phase.get().name() }}">
+      <header class="masthead">
+        <div class="lockup">
+          <img src="/brand/fusor-ai.svg" alt="fusor-ai" width="40" height="40">
+          <span class="times" aria-hidden="true">×</span>
+          <img src="/brand/phonon.svg" alt="" width="36" height="36">
+          <span class="wordmark">Phonon</span>
+        </div>
+        <h1>Text to speech, streamed from your own CPU</h1>
+        <p class="lede">Phonon 31M compiled to WebAssembly with fusor-ai. It runs on your CPU, streams every 80&nbsp;ms frame to your speakers as it is computed, and once loaded, nothing you type leaves the page.</p>
+      </header>
+
+      <If condition="{{ state.phase.get() == Phase::Loading }}">
+        <section class="card loading" aria-live="polite">
+          <div class="row"><strong>Loading the model</strong><span id="detail" class="muted">{{ state.detail.get() }}</span></div>
+          <progress max="1" value="{{ state.fraction.get() }}"></progress>
+        </section>
+      </If>
+
+      <If condition="{{ state.phase.get() == Phase::Broken }}">
+        <section class="card broken" role="alert">
+          <strong>{{ if state.failed_to_load() { "The model could not load" } else { "The engine stopped" } }}</strong>
+          <p id="detail">{{ state.detail.get() }}</p>
+          <If condition="{{ state.failed_to_load() }}">
+            <p class="muted">A bundle loads only into the runtime built with it. If you built this page yourself, rebuild both with <code>just ui</code>.</p>
+          </If>
+          <div class="row"><a id="reload" class="control primary" href="">Reload</a></div>
+        </section>
+      </If>
+
+      <section class="card compose">
+        <label for="text">Text</label>
+        <textarea id="text" class="field" rows="4" maxlength="2000" bind="state.text"></textarea>
+
+        <fieldset hidden="{{ state.voices.get().is_empty() }}">
+          <legend>Voice <span class="muted">· pick one to hear it</span></legend>
+          <div class="voices">
+            <ForEach items="{{ state.voices.get() }}" key="{{ |voice| voice.id.clone() }}">
+              <label class="voice"><input type="radio" name="voice" value="{{ item.get().id }}" bind="state.voice.clone()" on:change="state.preview(item.get())"><span><strong>{{ item.get().name() }}</strong><small>{{ item.get().description() }}</small></span></label>
+            </ForEach>
+          </div>
+        </fieldset>
+
+        <div class="knobs">
+          <div class="knob">
+            <label for="temperature">Temperature <output>{{ format!("{:.2}", state.temperature.get()) }}</output></label>
+            <input id="temperature" type="range" min="0" max="1" step="0.05" bind="state.temperature">
+          </div>
+          <div class="knob">
+            <label for="seed">Seed</label>
+            <input id="seed" class="field mono" type="text" inputmode="numeric" spellcheck="false" bind="state.seed">
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="generate" type="button" class="control primary" disabled="{{ !state.can_generate() }}" on:click="state.generate()">{{ state.generate_label() }}</button>
+          <button id="stop" type="button" class="control" disabled="{{ !state.can_stop() }}" on:click="state.stop()">Stop</button>
+          <span id="status" class="muted" aria-live="polite">{{ state.status.get() }}</span>
+        </div>
+      </section>
+
+      <If condition="{{ state.measured.get() }}">
+        <section class="card live" data-playing="{{ state.playing.get() }}">
+          <canvas id="wave" aria-label="Waveform of the generated audio"></canvas>
+          <dl class="metrics">
+            <div><dt>First audio</dt><dd id="heard">{{ state.metrics.get().heard() }}</dd><dd class="muted">{{ state.metrics.get().engine_first() }}</dd></div>
+            <div><dt>RTF</dt><dd id="rtf">{{ state.metrics.get().real_time_factor() }}</dd><dd class="muted">{{ state.metrics.get().speedup() }}</dd></div>
+            <div><dt>Per frame</dt><dd id="per-frame">{{ state.metrics.get().per_frame() }}</dd><dd class="muted">{{ state.metrics.get().frame_budget() }}</dd></div>
+            <div><dt>Audio</dt><dd id="audio-seconds">{{ state.metrics.get().audio() }}</dd><dd class="muted">{{ state.metrics.get().frames_and_underruns() }}</dd></div>
+            <div><dt>Network</dt><dd id="requests">{{ state.metrics.get().requests() }}</dd><dd class="muted">requests since the model loaded</dd></div>
+          </dl>
+          <Match value="{{ state.audio.get() }}">
+            <Case pattern="Some(url)">
+              <div class="row">
+                <audio controls src="{{ url.get() }}"></audio>
+                <a id="download" class="control" download="phonon.wav" href="{{ url.get() }}">Download WAV</a>
+              </div>
+            </Case>
+            <Case pattern="None"></Case>
+          </Match>
+        </section>
+      </If>
+
+      <footer class="muted">
+        <span id="runtime">{{ state.summary() }}</span>
+        <span>Built with <a href="https://github.com/fusor-rs/fusor-ai">fusor-ai</a> and <a href="https://fusor.build">fusor</a> · <a href="https://huggingface.co/gradium/phonon-31m-en">model</a> · <a href="https://github.com/fusor-rs/phonon-wasm">source</a></span>
+      </footer>
+    </main>
+  </App>
+</body>
+</html>

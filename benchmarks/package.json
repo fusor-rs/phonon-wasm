@@ -1,0 +1,7 @@
+{
+  "name": "phonon-wasm-benchmarks",
+  "private": true,
+  "type": "module",
+  "description": "Head-to-head runs of the Phonon page and Gradium's phonon-tts in one headless Chrome",
+  "dependencies": { "phonon-tts": "0.4.0", "playwright": "1.64.1" }
+}

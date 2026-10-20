@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Phonon</title>
+  <rect width="64" height="64" rx="16" fill="#272A2C"/>
+  <g fill="#DF5036">
+    <rect x="9" y="26" width="6" height="12" rx="3" fill="#A83228"/>
+    <rect x="19" y="18" width="6" height="28" rx="3"/>
+    <rect x="29" y="11" width="6" height="42" rx="3" fill="#F0715A"/>
+    <rect x="39" y="20" width="6" height="24" rx="3"/>
+    <rect x="49" y="27" width="6" height="10" rx="3" fill="#A83228"/>
+  </g>
+</svg>

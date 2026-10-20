@@ -22,3 +22,27 @@ rustc-ice-*.txt
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Downloads, scratch and experiment outputs
+.cache/
+
+# phonon-wasm generated state
+/dist/
+/.tools/
+/e2e/node_modules/
+/e2e/results/
+/benchmarks/node_modules/
+/benchmarks/out/
+/fixtures/goldens/*.safetensors
+/fixtures/goldens/*.wav
+.DS_Store
+
+# Vercel CLI state and the IDE
+.vercel
+.env*
+.idea/
+
+# Python bytecode and virtual environments (benchmark and ASR scripts)
+__pycache__/
+*.pyc
+.venv/
