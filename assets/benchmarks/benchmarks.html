@@ -1,0 +1,125 @@
+<!doctype html>
+<!--
+  The README's benchmark summary: phonon-wasm against Gradium's runtimes of the same model, from
+  benchmarks.md (sentence S1, medians). Rendered at 1400×1250, twice the pixels, by
+  `node scripts/render-images.mjs` into benchmarks.png and benchmarks-dark.png (`?theme=dark`).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --canvas: #faf9f6; --card: #ffffff; --ink: #272a2c; --soft: #5c5f61; --faint: #8b8d8d;
+    --hairline: #e3e0d9; --ours: #df5036; --theirs: #3f78b5;
+  }
+  :root.dark {
+    --canvas: #121314; --card: #1a1b1c; --ink: #f2f1ed; --soft: #b4b5b3; --faint: #8b8d8d;
+    --hairline: #303335; --ours: #e8603f; --theirs: #4a87d0;
+  }
+  html, body { margin: 0; }
+  body {
+    width: 1400px; height: 1250px; box-sizing: border-box; padding: 56px 64px;
+    background: var(--canvas); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+  h1 { margin: 0; font-size: 36px; letter-spacing: -0.02em; }
+  header p { margin: 8px 0 0; font-size: 19px; color: var(--soft); }
+  .legend { display: flex; flex-direction: column; gap: 10px; font-size: 19px; }
+  .legend span { display: flex; align-items: center; gap: 10px; }
+  .legend i { width: 18px; height: 18px; border-radius: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .panel { background: var(--card); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px 28px; }
+  .panel h2 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
+  .panel .unit { margin: 4px 0 0; font-size: 16px; color: var(--faint); }
+  .verdict { margin: 12px 0 18px; font-size: 19px; font-weight: 600; }
+  .verdict.loss { color: var(--soft); }
+  .group { display: grid; grid-template-columns: 112px 1fr; align-items: center; column-gap: 12px; margin-top: 12px; }
+  .group > b { font-size: 16px; font-weight: 500; color: var(--soft); }
+  .bars { display: flex; flex-direction: column; gap: 2px; }
+  .row { display: flex; align-items: center; gap: 10px; height: 22px; font-size: 16px; }
+  .bar { height: 22px; border-radius: 0 4px 4px 0; }
+  .row.none { color: var(--faint); font-style: italic; }
+  .stat { display: flex; align-items: baseline; gap: 16px; margin-top: 18px; }
+  .stat b { font-size: 72px; letter-spacing: -0.04em; line-height: 1; }
+  .stat span { font-size: 19px; color: var(--soft); line-height: 1.4; }
+  footer { margin-top: 22px; font-size: 15px; color: var(--faint); line-height: 1.5; }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>phonon-wasm against Gradium's own runtime</h1>
+      <p>The same model, Phonon 31M, on one Apple M4 Pro. Medians of three runs; shorter bars are better.</p>
+    </div>
+    <div class="legend">
+      <span><i style="background: var(--ours)"></i>phonon-wasm (fusor-ai)</span>
+      <span><i style="background: var(--theirs)"></i>Gradium (phonon-tts, xn-ptts)</span>
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>
+    Quantized weights on both sides (7-bit against 8-bit). Chrome memory includes the browser's own ~400 MB.
+    Gradium's WebGPU row ran in Google Chrome on the Apple GPU; <span style="white-space: nowrap">phonon-wasm</span> has no GPU backend.
+    Full tables, methods and caveats: benchmarks.md.
+  </footer>
+<script>
+  const PANELS = [
+    {
+      title: 'Speed in Chrome, on the CPU', unit: 'Real-time factor: compute time ÷ audio length',
+      verdict: '1.3× faster on one thread, 2.4× on eight', format: (v) => v.toFixed(3),
+      groups: [
+        ['1 thread', 0.098, 0.129], ['3 threads', 0.038, 0.063], ['4 threads', 0.031, 0.053],
+        ['8 threads', 0.022, 0.053], ['WebGPU', null, 0.024],
+      ],
+    },
+    {
+      title: 'Speed as a native app', unit: 'Real-time factor: compute time ÷ audio length',
+      verdict: 'Gradium is 3.5× faster on one thread', loss: true, format: (v) => v.toFixed(3),
+      groups: [['1 thread', 0.070, 0.020], ['4 threads', 0.022, 0.018], ['8 threads', 0.040, 0.019]],
+    },
+    {
+      title: 'Time to first audio in Chrome', unit: 'Milliseconds from the request to the first sound',
+      verdict: '1.2× sooner on one thread, 3× on eight', format: (v) => `${v} ms`,
+      groups: [['1 thread', 21, 26], ['8 threads', 4, 12]],
+    },
+    {
+      title: 'Memory', unit: 'Megabytes, peak',
+      verdict: '19–55% less', format: (v) => `${v} MB`,
+      groups: [['Chrome, 1 thr.', 397, 673], ['Chrome, 8 thr.', 582, 721], ['Native, 1 thr.', 142, 316]],
+    },
+    {
+      title: 'Download', unit: 'Megabytes: the model plus the WebAssembly runtime',
+      verdict: '30% smaller', format: (v) => `${v} MB`,
+      groups: [['First visit', 48.5, 69.4]],
+    },
+  ];
+
+  const grid = document.getElementById('grid');
+  const row = (value, color, scale, format) => value === null
+    ? '<div class="row none">no GPU backend</div>'
+    : `<div class="row"><div class="bar" style="width:${(value / scale) * 100}%;background:${color}"></div>${format(value)}</div>`;
+
+  for (const panel of PANELS) {
+    const scale = Math.max(...panel.groups.flatMap(([, ours, theirs]) => [ours ?? 0, theirs])) * 1.32;
+    const groups = panel.groups.map(([label, ours, theirs]) => `
+      <div class="group"><b>${label}</b><div class="bars">
+        ${row(ours, 'var(--ours)', scale, panel.format)}${row(theirs, 'var(--theirs)', scale, panel.format)}
+      </div></div>`).join('');
+    grid.insertAdjacentHTML('beforeend', `
+      <section class="panel">
+        <h2>${panel.title}</h2><p class="unit">${panel.unit}</p>
+        <p class="verdict${panel.loss ? ' loss' : ''}">${panel.verdict}</p>${groups}
+      </section>`);
+  }
+  grid.insertAdjacentHTML('beforeend', `
+    <section class="panel">
+      <h2>Intelligibility</h2><p class="unit">Word errors when Whisper transcribes the output</p>
+      <div class="stat"><b>0</b><span>for both, in all 149 recordings:<br>every runtime, build and thread count</span></div>
+    </section>`);
+
+  if (new URLSearchParams(location.search).get('theme') === 'dark') document.documentElement.classList.add('dark');
+</script>
+</body>
+</html>

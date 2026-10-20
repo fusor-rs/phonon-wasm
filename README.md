@@ -67,14 +67,10 @@ target/release/phonon synth dist/model "Hello there." --voice maeve -o hello.wav
 
 On an Apple M4 Pro in Chrome, the page generates speech 10× faster than it plays on one thread and 45× faster on eight: a 6-second sentence takes about 0.6 s or 0.13 s to compute, and the first audio is ready 4–21 ms after the request. Every output transcribes with zero word errors. [benchmarks.md](benchmarks.md) has the full measurements against Gradium's own runtime, [xn-ptts](https://github.com/gradium-ai/xn-ptts), and its browser package [phonon-tts](https://www.npmjs.com/package/phonon-tts), in every configuration that runs on that machine, including the ones where we lose:
 
-| Same model, Apple M4 Pro | phonon-wasm | Gradium |
-| --- | ---: | ---: |
-| Chrome, CPU, 1 thread (RTF, lower is faster) | **0.098** | 0.129 |
-| Chrome, CPU, 8 threads | **0.022** | 0.053 |
-| Chrome, WebGPU | – (no GPU backend) | 0.024 |
-| Native CLI, 1 thread | 0.070 | **0.020** |
-| Native CLI, 4 threads | 0.022 | **0.018** |
-| Browser download | **48.5 MB** | 69.4 MB |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks/benchmarks-dark.png">
+  <img src="assets/benchmarks/benchmarks.png" alt="phonon-wasm against Gradium's runtime on an Apple M4 Pro. Chrome, CPU, real-time factor: 0.098 against 0.129 on one thread, 0.022 against 0.053 on eight; Gradium's WebGPU build 0.024. Native app: 0.070 against 0.020 on one thread, 0.022 against 0.018 on four, 0.040 against 0.019 on eight. First audio in Chrome: 21 against 26 ms on one thread, 4 against 12 ms on eight. Memory: 397 against 673 MB in Chrome on one thread, 582 against 721 MB on eight, 142 against 316 MB native. Download: 48.5 against 69.4 MB. Word errors: 0 for both." width="880">
+</picture>
 
 In the browser on the CPU, phonon-wasm is faster at every thread count, with a smaller download and less memory. Natively, Gradium's `ptts` is 3.5× faster on one thread: it uses Apple's SME2 matrix units through KleidiAI, and Accelerate for f32, which WebAssembly cannot reach ([fusor-ai#1](https://github.com/fusor-rs/fusor-ai/issues/1)). Its WebGPU backend matches our best CPU result. On a busy machine, our eight-thread runs vary more than Gradium's ([fusor-ai#2](https://github.com/fusor-rs/fusor-ai/issues/2)).
 
