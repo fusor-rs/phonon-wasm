@@ -380,9 +380,9 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fusor-ai-blocks"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94d56bd36a8c484709fa3b2de97a14e41308fcad983855759e56265fdf743553"
+checksum = "ad99f634f8c4948abce7933d788b10d096eba5d3ce51fc139c4059d49b0bf134"
 dependencies = [
  "fusor-ai-bundle",
  "fusor-ai-kernels",
@@ -392,22 +392,23 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-bundle"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4db11a9f2ca7c415b5fc8e495b8f2bfbc4736a5ed6bd99619ca110d0b3c6b43"
+checksum = "87d7ab0a0a0a74b7a608ac29a36dca47c0a4d5f57ec275b4fa95d7262d2b178b"
 dependencies = [
  "blake3",
  "fusor-ai-kernels",
  "serde",
  "serde_json",
  "thiserror",
+ "tokenizers",
 ]
 
 [[package]]
 name = "fusor-ai-compile"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e367c5b8563578966b5c11395329869f3b9271aa29ac111e54ea935c8c11b58"
+checksum = "7c2f6ff5210efba7fb07e80236bb594f054c69b29f8770c81f95e8499dd6e030"
 dependencies = [
  "blake3",
  "fusor-ai-bundle",
@@ -419,9 +420,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-kernels"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "696949a20dc0e8852ae7bed3fc9a317976af0718662de0cc0e1a69ab636771e4"
+checksum = "fd8e6cd03404923c1ff425c4806c5f549c49bd5cb3dd661cd36aa8e4e30c9e77"
 dependencies = [
  "fusor-ai-team",
  "serde",
@@ -430,24 +431,22 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-phonon"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc6f2285e4809aadcdd1cf6f04d8fcdbaa13a886418abd04c8658208fe9eb6b8"
+checksum = "7bf7bd1150629556093982065101537c32ab07f18b01b047dec8068401098d3a"
 dependencies = [
  "fusor-ai-blocks",
  "fusor-ai-bundle",
  "fusor-ai-kernels",
  "fusor-ai-team",
  "serde",
- "thiserror",
- "tokenizers",
 ]
 
 [[package]]
 name = "fusor-ai-phonon-compile"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58c2ab1bd42d2dc443c3b609257b5e8f0ea7492b5267f644bec2d8d3af0df0be"
+checksum = "ff82369e2da45b420c3ebe1d8ef5d8bdea7c2672be9267677e990007be6608a4"
 dependencies = [
  "fusor-ai-bundle",
  "fusor-ai-compile",
@@ -457,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "fusor-ai-team"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e2d5ac39899d9094b1b75838fb7d36ab79b750f69e0feee647a0b55ee5f5f51"
+checksum = "e9fd5c664de6bf2f1f24d4a463a7f2176d282f61cf5b30df8009cee24cc5c4ed"
 dependencies = [
  "rayon",
 ]
