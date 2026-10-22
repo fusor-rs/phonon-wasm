@@ -443,6 +443,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fusor-ai-runtime"
+version = "0.1.2"
+dependencies = [
+ "blake3",
+ "fusor-ai-bundle",
+ "getrandom",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-rayon",
+]
+
+[[package]]
 name = "fusor-ai-team"
 version = "0.1.2"
 dependencies = [
@@ -671,14 +684,10 @@ dependencies = [
 name = "phonon-runtime"
 version = "0.1.0"
 dependencies = [
- "blake3",
- "fusor-ai-bundle",
  "fusor-ai-phonon",
- "getrandom",
- "serde",
+ "fusor-ai-runtime",
  "serde_json",
  "wasm-bindgen",
- "wasm-bindgen-rayon",
 ]
 
 [[package]]

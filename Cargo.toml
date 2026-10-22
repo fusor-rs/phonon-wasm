@@ -39,15 +39,12 @@ undocumented_unsafe_blocks = "deny"
 # host scripts, the runtime build and the import check.
 bundle = { package = "fusor-ai-bundle", path = "vendor/fusor-ai/crates/bundle" }
 compile = { package = "fusor-ai-compile", path = "vendor/fusor-ai/crates/compile" }
+runtime = { package = "fusor-ai-runtime", path = "vendor/fusor-ai/crates/runtime" }
 phonon = { package = "fusor-ai-phonon", path = "vendor/fusor-ai/crates/models/phonon" }
 phonon-compile = { package = "fusor-ai-phonon-compile", path = "vendor/fusor-ai/crates/models/phonon-compile" }
 rayon = "=1.12.0"
-serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
-blake3 = { version = "=1.8.7", default-features = false, features = ["std"] }
 wasm-bindgen = "=0.2.129"
-wasm-bindgen-rayon = { version = "=1.3.0", features = ["no-bundler"] }
-getrandom = "=0.3.4"
 anyhow = "=1.0.104"
 clap = { version = "=4.6.7", features = ["derive"] }
 

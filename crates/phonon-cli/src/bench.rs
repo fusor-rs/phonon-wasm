@@ -4,6 +4,7 @@
 use std::time::Instant;
 
 use anyhow::Result;
+use bundle::Engine as _;
 use phonon::model::LATENT;
 use phonon::pipeline::Stage;
 use phonon::prompt::VOICES;
