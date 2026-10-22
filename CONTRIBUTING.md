@@ -5,14 +5,13 @@ Use Rust 1.99 or later, edition 2024, Node.js 22 or later, and `just`. Clone wit
 denied except in the module that states why it needs it (see `AGENTS.md`).
 
 The model, its compiler and the toolkit live in
-[fusor-ai](https://github.com/fusor-rs/fusor-ai): the crates come from crates.io as
-`fusor-ai-*`, and `vendor/fusor-ai`, a submodule at the same release, supplies the browser
-host scripts, the runtime build and the import check. To move to a new fusor-ai release, bump
-the `fusor-ai-*` pins in the root `Cargo.toml` and check out its tag in the submodule
-(`git -C vendor/fusor-ai checkout v<version>`) in one change of its own, with the checks
-below. To try an unreleased fusor-ai change here first, point the submodule at it and add a
-`[patch.crates-io]` table that maps each `fusor-ai-*` crate to its path under
-`vendor/fusor-ai/crates`; don't commit the patch.
+[fusor-ai](https://github.com/fusor-rs/fusor-ai). Everything this repository takes from it
+comes from `vendor/fusor-ai`, a submodule pinned to a commit pushed to fusor-ai: the
+`fusor-ai-*` crates, as path dependencies in the root `Cargo.toml`, the browser host scripts,
+the runtime build and the import check. To move to another fusor-ai commit, check it out in the
+submodule (`git -C vendor/fusor-ai checkout <commit>`) in one change of its own, with the
+checks below. Never add a crates.io pin, a `[patch]` table or a path to a fusor-ai checkout
+beside this one.
 
 Run `just check` before considering a change complete. It formats, tests and lints the crates
 natively, the runtime for `wasm32-unknown-unknown` (SIMD128 and relaxed SIMD) and the page,
