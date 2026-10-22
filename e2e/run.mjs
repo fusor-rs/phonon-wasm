@@ -17,64 +17,26 @@
 // without it the run fails, unless --skip-asr says to accept a run without that check.
 // Results (JSON, WAV, screenshots) go to e2e/results/<timestamp>-*, or to `--out <dir>`.
 
-import { chromium } from 'playwright';
-import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
+import { fetched, flags, run, STAMP } from '../vendor/fusor-ai/packages/e2e/kit.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const { values } = parseArgs({
-  options: {
-    threads: { type: 'string' },
-    build: { type: 'string' },
-    text: { type: 'string', default: 'Please remember to water the plants on Tuesday, and call the dentist about the appointment at three o\'clock.' },
-    voice: { type: 'string', default: 'maeve' },
-    'max-wer': { type: 'string', default: '0.15' },
-    'skip-asr': { type: 'boolean', default: false },
-    url: { type: 'string' },
-    model: { type: 'string' },
-    out: { type: 'string' },
-  },
+const values = flags({
+  text: { type: 'string', default: 'Please remember to water the plants on Tuesday, and call the dentist about the appointment at three o\'clock.' },
+  voice: { type: 'string', default: 'maeve' },
+  'max-wer': { type: 'string', default: '0.15' },
+  'skip-asr': { type: 'boolean', default: false },
 });
-const PORT = process.env.PORT ?? '8787';
-const BASE = (values.url ?? `http://127.0.0.1:${PORT}`).replace(/\/$/, '');
 const ASR_PYTHON = process.env.ASR_PYTHON;
 const DEADLINE_MS = 10 * 60 * 1000;
-const RUN_DIR = values.out ?? join(ROOT, 'e2e/results');
-const STAMP = new Date().toISOString().replace(/[:.]/g, '-');
-const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
-const up = async () => {
-  try {
-    return (await fetch(`${BASE}/model/manifest.json`)).ok;
-  } catch {
-    return false;
-  }
-};
-let server = null;
-if (!values.url && !(await up())) {
-  log(`starting fusor-ai's serve.mjs on :${PORT}`);
-  const serve = join(ROOT, 'vendor/fusor-ai/scripts/serve.mjs');
-  const mounts = ['--mount', '/=app/dist', '--mount', '/model/=dist/model'];
-  server = spawn(process.execPath, [serve, '--port', PORT, ...mounts], { cwd: ROOT, stdio: 'inherit' });
-  for (let i = 0; i < 50 && !(await up()); i++) await new Promise((r) => setTimeout(r, 200));
-}
-
-mkdirSync(RUN_DIR, { recursive: true });
-const profile = mkdtempSync(join(tmpdir(), 'phonon-e2e-'));
 // The page's state machine is `main[data-phase]`: loading, ready, generating, broken.
 const settled = () => /^(ready|broken)$/.test(document.querySelector('main')?.dataset.phase ?? '');
 const finished = () => /^(done|stopped|error)/.test(document.getElementById('status')?.textContent ?? '');
 const heard = () => /\d/.test(document.getElementById('heard')?.textContent ?? '');
-const results = { started: new Date().toISOString(), base: BASE, text: values.text };
-const failures = [];
-const check = (ok, message) => {
-  log(`${ok ? 'ok  ' : 'FAIL'} ${message}`);
-  if (!ok) failures.push(message);
-};
 
 /** The live metric tiles, as the page shows them. */
 async function metrics(page) {
@@ -91,21 +53,19 @@ async function speak(page, requests, selector) {
   await page.waitForFunction(finished, null, { timeout: DEADLINE_MS, polling: 'raf' });
   await page.waitForFunction(heard, null, { timeout: DEADLINE_MS, polling: 'raf' });
   const run = { status: await page.textContent('#status'), ...(await metrics(page)) };
-  run.requestsDuringSynthesis = requests.slice(requestsBefore).filter((u) => !u.startsWith('blob:'));
+  run.requestsDuringSynthesis = fetched(requests, requestsBefore);
   return run;
 }
 
-try {
-  const context = await chromium.launchPersistentContext(profile, { headless: true });
-  const requests = [];
-  context.on('request', (r) => requests.push(r.url()));
-  const page = context.pages()[0] ?? (await context.newPage());
-  page.on('console', (m) => m.type() === 'error' && log('console:', m.text()));
-  page.on('pageerror', (e) => log('pageerror:', e.message));
-  const query = `?${new URLSearchParams(Object.entries({ threads: values.threads, build: values.build, model: values.model }).filter(([, v]) => v))}`;
-
+const launch = {
+  root: ROOT,
+  name: 'phonon',
+  values,
+  fields: { text: values.text },
+};
+await run(launch, async ({ page, requests, query, base, runDir, results, check, revisit }) => {
   const t0 = Date.now();
-  await page.goto(`${BASE}/${query}`);
+  await page.goto(`${base}/${query}`);
   await page.waitForSelector('main[data-phase]');
   await page.fill('#text', values.text);
   results.queuedAt = await page.getAttribute('main', 'data-phase');
@@ -130,7 +90,7 @@ try {
   await page.waitForFunction(playedOut, null, { timeout: DEADLINE_MS });
   results.played = await metrics(page);
   check(/no gaps/.test(results.played.notes[3]), `playback: ${results.played.notes[3]}`);
-  await page.screenshot({ path: join(RUN_DIR, `${STAMP}-done.png`), fullPage: true });
+  await page.screenshot({ path: join(runDir, `${STAMP}-done.png`), fullPage: true });
 
   const wavBase64 = await page.evaluate(async () => {
     const bytes = new Uint8Array(await (await fetch(document.getElementById('download').href)).arrayBuffer());
@@ -138,7 +98,7 @@ try {
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return btoa(s);
   });
-  const wavPath = join(RUN_DIR, `${STAMP}.wav`);
+  const wavPath = join(runDir, `${STAMP}.wav`);
   writeFileSync(wavPath, Buffer.from(wavBase64, 'base64'));
   results.wavBytes = Buffer.from(wavBase64, 'base64').length;
   check(results.wavBytes > 44 + 48000, `WAV ${(results.wavBytes / 1e6).toFixed(2)} MB -> ${wavPath}`);
@@ -153,20 +113,6 @@ try {
     check(values['skip-asr'], 'ASR not checked: set ASR_PYTHON to a Python with faster-whisper, or pass --skip-asr');
   }
 
-  const t2 = Date.now();
-  await page.reload();
-  await page.waitForFunction(settled, null, { timeout: DEADLINE_MS, polling: 250 });
-  results.revisitMs = Date.now() - t2;
-  results.revisitDetail = await page.textContent('#runtime');
-  check(/model loaded from this device/.test(results.revisitDetail), `revisit in ${(results.revisitMs / 1000).toFixed(1)} s: ${results.revisitDetail}`);
-  await context.close();
-} finally {
-  rmSync(profile, { recursive: true, force: true });
-  server?.kill();
-}
-
-results.failures = failures;
-writeFileSync(join(RUN_DIR, `${STAMP}.json`), JSON.stringify(results, null, 2));
-const verdict = failures.length ? `e2e FAILED (${failures.length})` : `e2e passed${ASR_PYTHON ? '' : ' WITHOUT the word error rate check'}`;
-log(verdict, `-> ${values.out ?? 'e2e/results'}/${STAMP}.json`);
-process.exit(failures.length ? 1 : 0);
+  await revisit(settled, DEADLINE_MS);
+  return ASR_PYTHON ? '' : ' WITHOUT the word error rate check';
+});
