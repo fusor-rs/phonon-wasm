@@ -15,7 +15,7 @@
 //
 // The intelligibility check needs ASR_PYTHON, a Python with faster-whisper (scripts/asr_check.py);
 // without it the run fails, unless --skip-asr says to accept a run without that check.
-// Results (JSON, WAV, screenshots) go to e2e/results/<timestamp>-*.
+// Results (JSON, WAV, screenshots) go to e2e/results/<timestamp>-*, or to `--out <dir>`.
 
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
@@ -36,13 +36,14 @@ const { values } = parseArgs({
     'skip-asr': { type: 'boolean', default: false },
     url: { type: 'string' },
     model: { type: 'string' },
+    out: { type: 'string' },
   },
 });
 const PORT = process.env.PORT ?? '8787';
 const BASE = (values.url ?? `http://127.0.0.1:${PORT}`).replace(/\/$/, '');
 const ASR_PYTHON = process.env.ASR_PYTHON;
 const DEADLINE_MS = 10 * 60 * 1000;
-const RUN_DIR = join(ROOT, 'e2e/results');
+const RUN_DIR = values.out ?? join(ROOT, 'e2e/results');
 const STAMP = new Date().toISOString().replace(/[:.]/g, '-');
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
@@ -167,5 +168,5 @@ try {
 results.failures = failures;
 writeFileSync(join(RUN_DIR, `${STAMP}.json`), JSON.stringify(results, null, 2));
 const verdict = failures.length ? `e2e FAILED (${failures.length})` : `e2e passed${ASR_PYTHON ? '' : ' WITHOUT the word error rate check'}`;
-log(verdict, `-> e2e/results/${STAMP}.json`);
+log(verdict, `-> ${values.out ?? 'e2e/results'}/${STAMP}.json`);
 process.exit(failures.length ? 1 : 0);
