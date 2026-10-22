@@ -1,10 +1,8 @@
 // The engine's home: a module Worker that loads the model and runs synthesis, off the page's
 // main thread.
 //
-// Load: the manifest download overlaps the runtime's compile; fusor-ai's loader picks and starts
-// the best runtime build (threaded builds get their compute workers from the page) and streams
-// every part of the bundle into it, from OPFS when cached there, else from the network; the
-// runtime checks each part's size and BLAKE3. The runtime itself does no I/O.
+// Load: fusor-ai's worker kit (`dist/host/worker.js`) starts the best runtime build and streams
+// every part of the bundle into it; the runtime checks each part's size and BLAKE3.
 //
 // Generate: one `step()` (one 80 ms frame) per macrotask, so a stop request is seen between
 // frames. Every frame's PCM goes straight to the page's audio worklet through `audioPort`, and a
@@ -12,85 +10,33 @@
 //
 // After the model is loaded nothing else is fetched: synthesis is entirely local.
 
-import { describe, errorKind, fetchOk, loadParts, startRuntime } from './dist/host/loader.js';
+import { engine, load, post, requestsSinceReady, serve, yieldTask } from './dist/host/worker.js';
 
-const CACHE_DIR = 'phonon-parts';
-const DIST_URL = new URL('./dist/', import.meta.url);
 // Waveform bars per frame the page draws.
 const PEAKS_PER_FRAME = 24;
 
-const post = (message, transfer) => self.postMessage(message, transfer ?? []);
-// A macrotask without setTimeout's 4 ms clamp on nested timers.
-const ticks = new MessageChannel();
-const yieldTask = () => new Promise((resolve) => {
-  ticks.port1.onmessage = resolve;
-  ticks.port2.postMessage(null);
-});
-
-let runtime = null;
 let audioPort = null;
 let stoppedJob = null;
-// Resource-timing entries of this worker when the model was ready: every later one is a request
-// made during synthesis (the page shows the count; it should stay 0).
-let entriesAtReady = 0;
-const requestsSinceReady = () => performance.getEntriesByType('resource').length - entriesAtReady;
 
-self.onmessage = async ({ data }) => {
-  try {
-    if (data.type === 'load') await load(data);
-    else if (data.type === 'audio') audioPort = data.port;
-    else if (data.type === 'generate') await generate(data);
-    else if (data.type === 'stop') stoppedJob = data.job;
-  } catch (error) {
-    // A runtime error is `{"kind","message"}` JSON and leaves the engine usable. Anything else is
-    // a trap (the runtimes abort on panic) or a bug: the module's state is lost.
-    post({ type: errorKind(error) ? 'error' : 'fatal', message: describe(error, runtime?.glue) });
-  }
-};
-
-async function load({ modelUrl, threads, build: requested }) {
-  const t0 = performance.now();
-  const [manifestText, started] = await Promise.all([
-    fetchOk(new URL('manifest.json', modelUrl)).then((response) => response.text()),
-    startRuntime({
-      distUrl: DIST_URL,
-      glueName: 'phonon_runtime',
+serve({
+  load: ({ modelUrl, threads, build }) =>
+    load({
+      modelUrl,
       threads,
-      requested,
-      onWarning: (message) => post({ type: 'warning', message }),
+      build,
+      glueName: 'phonon_runtime',
+      cacheName: 'phonon-parts',
+      distUrl: new URL('./dist/', import.meta.url),
+      onRuntime: (started) => post({ type: 'runtime', build: started.build.name, threads: started.threads, sampleRate: started.glue.sample_rate() }),
+      onReady: (progress) => post({ type: 'ready', voices: JSON.parse(engine.glue.voices()), ...progress }),
     }),
-  ]);
-  const rt = new started.glue.Runtime(manifestText);
-  runtime = { rt, glue: started.glue };
-  post({ type: 'runtime', build: started.build.name, threads: started.threads, sampleRate: started.glue.sample_rate() });
-  const progress = await loadParts({
-    runtime: rt,
-    manifest: JSON.parse(manifestText),
-    baseUrl: modelUrl,
-    cacheName: CACHE_DIR,
-    onProgress: (p) => post({ type: 'progress', ...p }),
-  });
-  entriesAtReady = performance.getEntriesByType('resource').length;
-  post({ type: 'ready', ms: performance.now() - t0, voices: JSON.parse(started.glue.voices()), ...progress });
-  await evictStaleParts(JSON.parse(manifestText));
-}
-
-/** Deletes cached parts this bundle does not name: those of earlier bundles. */
-async function evictStaleParts(manifest) {
-  const keep = new Set(manifest.parts.map((part) => part.blake3));
-  let dir;
-  try {
-    dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(CACHE_DIR);
-  } catch {
-    return; // no OPFS, or nothing was cached
-  }
-  for await (const name of dir.keys()) {
-    if (!keep.has(name)) await dir.removeEntry(name);
-  }
-}
+  audio: ({ port }) => (audioPort = port),
+  generate,
+  stop: ({ job }) => (stoppedJob = job),
+});
 
 async function generate({ job, request }) {
-  const { rt, glue } = runtime;
+  const { rt, glue } = engine;
   audioPort.postMessage({ type: 'start', job });
   const t0 = performance.now();
   const timing = { computeMs: 0, frames: 0, samples: 0, engineFirstMs: null };
@@ -108,7 +54,7 @@ async function generate({ job, request }) {
 
 /** Steps `job` to its end or its stop, sending each frame's PCM to the worklet. */
 async function frames(job, t0, timing, chunks) {
-  const { rt } = runtime;
+  const { rt } = engine;
   for (;;) {
     if (stoppedJob === job) {
       rt.cancel();
