@@ -32,7 +32,8 @@ model: native
 # when nothing changed), so they always come from the same fusor-ai.
 ui: model runtimes page serve
 
-# Every stage against the reference's goldens (scripts/golden-harness), with the f32 bundle.
+# Every stage against the reference's goldens (vendor/fusor-ai/models/phonon/reference), with the
+# f32 bundle.
 parity: native
     test -f {{goldens}}/golden_f32_A.safetensors || just goldens
     scripts/fetch-checkpoint.sh {{checkpoint}}
@@ -43,7 +44,7 @@ parity: native
 # Golden tensors and WAVs from the reference runtime (gradium-ai/xn-ptts at a pinned commit).
 goldens:
     scripts/fetch-checkpoint.sh {{checkpoint}}
-    cargo run --release --manifest-path scripts/golden-harness/Cargo.toml -- {{checkpoint}} {{goldens}}/golden_f32_A.safetensors {{goldens}}/reference_f32_A.wav f32
+    cargo run --release --manifest-path {{fusor_ai}}/models/phonon/reference/Cargo.toml -- {{checkpoint}} {{goldens}}/golden_f32_A.safetensors {{goldens}}/reference_f32_A.wav f32
 
 bench: native
     target/release/phonon bench {{model}}

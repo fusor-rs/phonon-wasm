@@ -6,25 +6,24 @@ denied except in the module that states why it needs it (see `AGENTS.md`).
 
 The model, its compiler and the toolkit live in
 [fusor-ai](https://github.com/fusor-rs/fusor-ai). Everything this repository takes from it
-comes from `vendor/fusor-ai`, a submodule pinned to a commit pushed to fusor-ai: the
-`fusor-ai-*` crates, as path dependencies in the root `Cargo.toml`, the browser host scripts,
-the runtime build and the import check. To move to another fusor-ai commit, check it out in the
+comes from `vendor/fusor-ai`, a submodule pinned to a commit pushed to fusor-ai: the model's
+crates in `models/phonon`, its runtime and CLI among them, the browser host scripts, the
+runtime build and the import check. To move to another fusor-ai commit, check it out in the
 submodule (`git -C vendor/fusor-ai checkout <commit>`) in one change of its own, with the
 checks below. Never add a crates.io pin, a `[patch]` table or a path to a fusor-ai checkout
 beside this one.
 
-Run `just check` before considering a change complete. It formats, tests and lints the crates
-natively, the runtime for `wasm32-unknown-unknown` (SIMD128 and relaxed SIMD) and the page,
-and syntax-checks the scripts. `just ui` builds the page and serves it; the page is a
-[fusor](https://github.com/fusor-rs/fusor) app in `app/`, built with the fusor CLI that
-`just tools` installs into `.tools/`. A change to the runtime, the page, the CLI or fusor-ai
-also needs `just build` once, then `just runtimes`, `just smoke`, `just parity` and
-`just e2e`, and a change meant to move speed `just head-to-head`. Say in the pull request what
-they showed (parity numbers, real-time factor, first-audio latency, word error rate) and which
-fusor-ai commit they ran against.
+Run `just check` before considering a change complete. It formats and lints the page and
+syntax-checks the scripts; fusor-ai's own check covers the runtime and the CLI. `just ui`
+builds the page and serves it; the page is a [fusor](https://github.com/fusor-rs/fusor) app in
+`app/`, built with the fusor CLI that `just tools` installs into `.tools/`. A change to the
+runtime, the page, the CLI or fusor-ai also needs `just build` once, then `just runtimes`,
+`just smoke`, `just parity` and `just e2e`, and a change meant to move speed `just
+head-to-head`. Say in the pull request what they showed (parity numbers, real-time factor,
+first-audio latency, word error rate) and which fusor-ai commit they ran against.
 
 `just parity` compares every stage with goldens from Gradium's reference runtime, which
-`just goldens` makes with `scripts/golden-harness` (it builds that runtime at a pinned commit, a
+`just goldens` makes with `vendor/fusor-ai/models/phonon/reference` (it builds that runtime at a pinned commit, a
 few minutes); `just parity` runs it first when the goldens are missing. `just e2e` checks the speech it makes with
 faster-whisper and needs `ASR_PYTHON`, a Python that has it:
 

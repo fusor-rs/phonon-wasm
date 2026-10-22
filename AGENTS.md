@@ -11,10 +11,10 @@ don't invent scope, features or options beyond the task.
 
 ## Repository
 
-- `crates/phonon-runtime`: the wasm-bindgen surface of the model (bundle parts
-  in, PCM out), built as four browser runtimes.
-- `crates/phonon-cli`: the native CLI `phonon` (`compile`, `synth`, `bench`,
-  `parity`).
+- `vendor/fusor-ai/models/phonon/runtime`: the wasm-bindgen surface of the model
+  (bundle parts in, PCM out), built as four browser runtimes.
+- `vendor/fusor-ai/models/phonon/cli`: the native CLI `phonon` (`compile`,
+  `synth`, `bench`, `parity`).
 - `app/`: the page, a [fusor](https://github.com/fusor-rs/fusor) app with its own
   Cargo workspace (fusor pins wasm-bindgen 0.2.117, the runtime 0.2.129): the
   form, the loading and the live measurements as Rust signals in `src/app.rs`,
