@@ -1,41 +1,13 @@
 # Phonon 31M in the browser. `just build` then `just serve` to build everything, the model
 # included, from source; `just ui` once the bundle is in dist/model.
 
-fusor_ai := "vendor/fusor-ai"
+import 'vendor/fusor-ai/just/product.just'
+
+name := "phonon"
 checkpoint := env_var_or_default("CHECKPOINT", ".cache/phonon-31m-en")
 profile := env_var_or_default("PROFILE", "q7")
-model := "dist/model"
 model_f32 := "dist/model-f32"
 goldens := "fixtures/goldens"
-app := "app"
-engine := "app/engine/dist"
-fusor := justfile_directory() / ".tools/bin/fusor"
-fusor_version := "0.1.9"
-port := env_var_or_default("PORT", "8787")
-nice := "nice -n 19"
-threads_toolchain := "nightly-2025-11-15"
-wasm_bindgen_version := "0.2.129"
-variants := "web-single web-single-relaxed web-threaded web-threaded-relaxed"
-version := `v=$(cargo pkgid -p phonon-cli); echo "${v##*[#@]}"`
-
-default:
-    @just --list
-
-check: lint wasm host
-
-lint:
-    cargo fmt --all -- --check
-    cargo fmt --manifest-path {{app}}/Cargo.toml -- --check
-    cargo clippy --manifest-path {{app}}/Cargo.toml --target wasm32-unknown-unknown --locked -- -D warnings
-    cargo test --workspace --locked
-    cargo clippy --workspace --all-targets --locked -- -D warnings
-    cargo doc --workspace --no-deps --locked
-
-# The runtime compiles a different kernel backend per target feature set: lint each.
-wasm:
-    cargo clippy -p phonon-runtime --target wasm32-unknown-unknown --locked -- -D warnings
-    cargo clippy -p phonon-runtime --target wasm32-unknown-unknown --locked --target-dir target/relaxed \
-      --config 'target.wasm32-unknown-unknown.rustflags=["-C", "target-feature=+simd128,+relaxed-simd"]' -- -D warnings
 
 host:
     bash -n scripts/fetch-checkpoint.sh
@@ -49,44 +21,12 @@ host:
     node --check benchmarks/head-to-head.mjs
     node --check benchmarks/reference/reference.js
 
-build: tools native model runtimes page
-
-# The threads toolchain, and the pinned wasm-bindgen, binaryen and fusor CLI (into .tools/).
-tools:
-    test -f {{fusor_ai}}/Cargo.toml || git submodule update --init
-    rustup target list --installed | grep -q wasm32-unknown-unknown || rustup target add wasm32-unknown-unknown
-    rustup run {{threads_toolchain}} rustc --version >/dev/null 2>&1 || rustup toolchain install {{threads_toolchain}} --profile minimal --component rust-src --target wasm32-unknown-unknown --no-self-update
-    {{fusor_ai}}/scripts/install-tools.sh {{wasm_bindgen_version}} > /dev/null
-    {{fusor}} --version 2>/dev/null | grep -qx 'fusor {{fusor_version}}' || cargo install --root .tools fusor-cli --version {{fusor_version}} --locked
-    cd {{app}} && {{fusor}} install
-
-native:
-    {{nice}} cargo build --release -p phonon-cli
-
 # Downloads the pinned checkpoint and voices (100 MB, sha256-checked) unless they are already
 # there, then compiles the bundle (under a second).
 model: native
     scripts/fetch-checkpoint.sh {{checkpoint}}
     rm -rf {{model}}
     target/release/phonon compile {{checkpoint}} {{model}} --profile {{profile}}
-
-# The four browser runtimes, fusor-ai's loader next to them, and the sealed-runtime check.
-runtimes: tools
-    for variant in {{variants}}; do {{nice}} {{fusor_ai}}/scripts/build-runtime.sh phonon-runtime $variant {{engine}} || exit 1; done
-    mkdir -p {{engine}}/host
-    cp {{fusor_ai}}/packages/host/loader.js {{fusor_ai}}/packages/host/worker.js {{engine}}/host/
-    for variant in {{variants}}; do \
-      flags=""; case $variant in *threaded*) flags="--threaded";; esac; case $variant in *relaxed*) ;; *) flags="$flags --no-relaxed";; esac; \
-      node {{fusor_ai}}/scripts/check-wasm-imports.mjs {{engine}}/$variant/phonon_runtime_bg.wasm --glue {{engine}}/$variant/phonon_runtime.js $flags || exit 1; \
-    done
-
-# The page, a fusor app, with the runtimes, into app/dist.
-page:
-    cd {{app}} && {{nice}} {{fusor}} build
-
-serve:
-    @echo "open http://localhost:{{port}}/"
-    node {{fusor_ai}}/scripts/serve.mjs --port {{port}} --mount /={{app}}/dist --mount /model/={{model}}
 
 # Try it on localhost. The bundle and the runtimes are rebuilt every time (incremental, seconds
 # when nothing changed), so they always come from the same fusor-ai.
@@ -107,16 +47,6 @@ goldens:
 
 bench: native
     target/release/phonon bench {{model}}
-
-# The bundle and the runtimes are rebuilt first (seconds when nothing changed): a runtime only
-# loads the bundle compiled with the same fusor-ai.
-smoke: model runtimes
-    node scripts/node-smoke.mjs {{model}} --build web-single
-    node scripts/node-smoke.mjs {{model}} --build web-single-relaxed
-
-e2e: model runtimes page
-    cd e2e && npm ci --no-audit --no-fund --silent && npx playwright install chromium
-    PORT={{port}} node e2e/run.mjs
 
 # Same-browser speed against Gradium's phonon-tts on its q8 weights (benchmarks/head-to-head.mjs).
 head-to-head: page
@@ -156,3 +86,6 @@ deploy-space: site
         commit_message="Deploy phonon-wasm {{version}}",
     )
     EOF
+
+# The fixed inputs the checks read.
+fixtures:
