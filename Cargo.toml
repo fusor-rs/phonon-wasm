@@ -40,9 +40,9 @@ undocumented_unsafe_blocks = "deny"
 bundle = { package = "fusor-ai-bundle", path = "vendor/fusor-ai/crates/bundle" }
 compile = { package = "fusor-ai-compile", path = "vendor/fusor-ai/crates/compile" }
 runtime = { package = "fusor-ai-runtime", path = "vendor/fusor-ai/crates/runtime" }
+harness = { package = "fusor-ai-harness", path = "vendor/fusor-ai/crates/harness" }
 phonon = { package = "fusor-ai-phonon", path = "vendor/fusor-ai/crates/models/phonon" }
 phonon-compile = { package = "fusor-ai-phonon-compile", path = "vendor/fusor-ai/crates/models/phonon-compile" }
-rayon = "=1.12.0"
 serde_json = "=1.0.154"
 wasm-bindgen = "=0.2.129"
 anyhow = "=1.0.104"

@@ -16,9 +16,9 @@ doc = false
 [dependencies]
 phonon = { workspace = true, features = ["threads"] }
 phonon-compile.workspace = true
+harness.workspace = true
 bundle.workspace = true
 compile.workspace = true
-rayon.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 

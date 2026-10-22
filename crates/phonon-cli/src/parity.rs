@@ -8,7 +8,9 @@
 use std::path::Path;
 
 use anyhow::{Result, ensure};
+use bundle::Stages as _;
 use compile::Checkpoint;
+use harness::parity::{max_abs, relative_l2};
 use phonon::FRAME_SAMPLES;
 use phonon::model::LATENT;
 use phonon::pipeline::Stage;
@@ -63,23 +65,6 @@ impl Goldens {
     }
 }
 
-fn relative_l2(ours: &[f32], reference: &[f32]) -> f64 {
-    let diff: f64 = ours
-        .iter()
-        .zip(reference)
-        .map(|(value, want)| f64::from(value - want).powi(2))
-        .sum();
-    let norm: f64 = reference.iter().map(|want| f64::from(*want).powi(2)).sum();
-    (diff / norm).sqrt()
-}
-
-fn max_abs(ours: &[f32], reference: &[f32]) -> f32 {
-    ours.iter()
-        .zip(reference)
-        .map(|(value, want)| (value - want).abs())
-        .fold(0.0, f32::max)
-}
-
 pub fn run(engine: &mut Engine, goldens: &Path) -> Result<()> {
     let goldens = Goldens::read(goldens)?;
     let chunks = engine.chunks(SENTENCE_A)?;
@@ -95,7 +80,7 @@ pub fn run(engine: &mut Engine, goldens: &Path) -> Result<()> {
         chunks[0].frame_budget,
         chunks[0].frames_after_eos
     );
-    for stage in Stage::ALL {
+    for &stage in Stage::ALL {
         let report = match stage {
             Stage::Voice => voice(engine, &goldens)?,
             Stage::Text => text(engine, &goldens),

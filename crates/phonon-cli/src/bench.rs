@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use anyhow::Result;
 use bundle::Engine as _;
+use bundle::Stages as _;
+use harness::bench::{row, time};
 use phonon::model::LATENT;
 use phonon::pipeline::Stage;
 use phonon::prompt::VOICES;
@@ -14,16 +16,6 @@ use phonon::{FRAME_SAMPLES, SAMPLE_RATE};
 use crate::parity::SENTENCE_A;
 
 const CALLS: usize = 20;
-
-// Milliseconds per call of `call`, after one warm-up call.
-fn time(mut call: impl FnMut()) -> f64 {
-    call();
-    let start = Instant::now();
-    for _ in 0..CALLS {
-        call();
-    }
-    start.elapsed().as_secs_f64() * 1000.0 / CALLS as f64
-}
 
 pub fn run(engine: &mut Engine) -> Result<()> {
     let tokens = engine.chunks(SENTENCE_A)?.swap_remove(0).tokens;
@@ -40,10 +32,12 @@ pub fn run(engine: &mut Engine) -> Result<()> {
         .map(|i| ((i * 7919 % 113) as f32 / 56.0) - 1.0)
         .collect();
     let mut per_frame = 0.0;
-    for stage in Stage::ALL {
+    for &stage in Stage::ALL {
         let ms = match stage {
             Stage::Voice | Stage::Text => continue,
-            Stage::Flow => time(|| drop(engine.flow_step(Some(&latent), &latent))),
+            Stage::Flow => time(CALLS, || {
+                anyhow::Ok(engine.flow_step(Some(&latent), &latent))
+            })?,
             Stage::Decode => {
                 let latents = latent.repeat(CALLS);
                 let start = Instant::now();
@@ -51,7 +45,7 @@ pub fn run(engine: &mut Engine) -> Result<()> {
                 start.elapsed().as_secs_f64() * 1000.0 / CALLS as f64
             }
         };
-        println!("  {:12} {ms:7.2} ms/frame", stage.name());
+        row(stage, ms, "/frame");
         per_frame += ms;
     }
     let frame_ms = 1000.0 * FRAME_SAMPLES as f64 / f64::from(SAMPLE_RATE);
