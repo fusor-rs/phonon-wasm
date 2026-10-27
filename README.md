@@ -7,6 +7,10 @@
 
 # Text to speech in the browser, on the CPU
 
+**[Try it in your browser](https://huggingface.co/spaces/fusorlabs/phonon-wasm)**: no install, no server. The model downloads once and runs on your CPU.
+
+**Speech 45× faster than real time, the first audio 4 ms after you ask**, in Chrome on an Apple M4 Pro, eight threads. [Benchmarks](benchmarks.md)
+
 Type text and hear it spoken by [Phonon 31M](https://huggingface.co/gradium/phonon-31m-en), Gradium's open-weight English text-to-speech model, computed on your own device. No server, no API key, no GPU required, and once the model has loaded, nothing you type leaves the page.
 
 phonon-wasm is the app around the model: a [fusor](https://github.com/fusor-rs/fusor) page, the browser runtime and a native CLI. The model itself, compiled to WebAssembly, is built with [fusor-ai](https://github.com/fusor-rs/fusor-ai), the toolkit for AI runtimes in Rust and WebAssembly, from the published weights.
